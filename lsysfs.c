@@ -96,6 +96,17 @@ int get_file_index( const char *path )
 	return -1;
 }
 
+int get_dir_index(const char *path)
+{
+	path++; // Eliminating "/" in the path
+
+	for (int curr_idx = 0; curr_idx < MAX_COUNT; curr_idx++ )
+		if ( strcmp( path, dir_list[ curr_idx ] ) == 0 )
+			return curr_idx;
+
+	return -1;
+}
+
 void write_to_file( const char *path, const char *new_content )
 {
 	int file_idx = get_file_index( path );
@@ -110,6 +121,30 @@ void write_to_file( const char *path, const char *new_content )
 	timespec_get(&now_time, TIME_UTC);
 	file_time_list[file_idx].atime = now_time;
 	file_time_list[file_idx].mtime = now_time;
+}
+
+int remove_dir( const char* path){
+
+	int dir_index = get_dir_index(path);
+
+	if (dir_index == -1) //No such dir
+		return -1;
+	
+	for ( dir_index; dir_index < MAX_COUNT-1; dir_index++ ){
+		strcpy(dir_list[dir_index], dir_list[dir_index+1]);
+	}
+	curr_dir_idx--;
+	return 0;
+}
+
+int remove_file( const int file_idx){
+	for ( int idx = file_idx; idx < MAX_COUNT-1; idx++ ){
+		strcpy(files_list[idx], files_list[idx+1]);
+		strcpy(files_content[idx], files_content[idx+1]);
+	}
+	curr_file_idx--;
+	curr_file_content_idx--;
+	return 0;
 }
 
 // ... //
@@ -215,13 +250,70 @@ static int do_write( const char *path, const char *buffer, size_t size, off_t of
 	return size;
 }
 
+static int do_rmdir( const char *path)
+{
+	if(is_dir( path ))
+		return remove_dir(path);
+	return -1;
+}
+
+static int do_utimens( const char *path, const struct timespec tv[2])
+{
+
+	if(is_dir(path) == 1){
+		int dir_index = get_dir_index(path);
+	
+		if (dir_index == -1) //No such dir
+			return -1;
+
+		//set timestamp
+		struct timespec now_time;
+		timespec_get(&now_time, TIME_UTC);
+		dir_time_list[dir_index].atime = now_time;
+		dir_time_list[dir_index].ctime = now_time;
+		dir_time_list[dir_index].mtime = now_time;
+
+
+	}else if (is_file(path) == 1){
+		int file_idx = get_file_index( path );
+	
+		if ( file_idx == -1 ) // No such file
+			return -1;
+
+		//set timestamp
+		struct timespec now_time;
+		timespec_get(&now_time, TIME_UTC);
+		file_time_list[file_idx].atime = now_time;
+		file_time_list[file_idx].ctime = now_time;
+		file_time_list[file_idx].mtime = now_time;
+		
+	}
+	
+	return 0;
+}
+
+static int do_unlink( const char *path)
+{
+	if(is_file( path ))
+	{
+		int file_idx = get_file_index( path );
+		if ( file_idx == -1 ) // No such file
+			return -1;
+		return remove_file(file_idx);
+	}
+	return -1;
+}
+
 static struct fuse_operations operations = {
     .getattr	= do_getattr,
     .readdir	= do_readdir,
     .read		= do_read,
+	.rmdir		= do_rmdir,
     .mkdir		= do_mkdir,
     .mknod		= do_mknod,
     .write		= do_write,
+	.utimens	= do_utimens,
+	.unlink		= do_unlink,
 };
 
 int main( int argc, char *argv[] )
