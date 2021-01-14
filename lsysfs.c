@@ -9,6 +9,7 @@
  */
  
 #define FUSE_USE_VERSION 30
+#define MAX_COUNT 256
 
 #include <fuse.h>
 #include <stdio.h>
@@ -21,13 +22,13 @@
 
 // ... //
 
-char dir_list[ 256 ][ 256 ];
+char dir_list[ MAX_COUNT ][ MAX_COUNT ];
 int curr_dir_idx = -1;
 
-char files_list[ 256 ][ 256 ];
+char files_list[ MAX_COUNT ][ MAX_COUNT ];
 int curr_file_idx = -1;
 
-char files_content[ 256 ][ 256 ];
+char files_content[ MAX_COUNT ][ MAX_COUNT ];
 int curr_file_content_idx = -1;
 
 void add_dir( const char *dir_name )
