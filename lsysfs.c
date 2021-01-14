@@ -31,10 +31,27 @@ int curr_file_idx = -1;
 char files_content[ MAX_COUNT ][ MAX_COUNT ];
 int curr_file_content_idx = -1;
 
+struct time_list
+{
+	struct timespec atime;
+	struct timespec ctime;
+	struct timespec mtime;
+};
+
+struct time_list dir_time_list[MAX_COUNT];
+struct time_list file_time_list[MAX_COUNT];
+
 void add_dir( const char *dir_name )
 {
 	curr_dir_idx++;
 	strcpy( dir_list[ curr_dir_idx ], dir_name );
+
+	//set timestamp
+	struct timespec now_time;
+	timespec_get(&now_time, TIME_UTC);
+	dir_time_list[curr_dir_idx].atime = now_time;
+	dir_time_list[curr_dir_idx].ctime = now_time;
+	dir_time_list[curr_dir_idx].mtime = now_time;
 }
 
 int is_dir( const char *path )
@@ -87,6 +104,12 @@ void write_to_file( const char *path, const char *new_content )
 		return;
 		
 	strcpy( files_content[ file_idx ], new_content ); 
+
+	//set timestamp
+	struct timespec now_time;
+	timespec_get(&now_time, TIME_UTC);
+	file_time_list[file_idx].atime = now_time;
+	file_time_list[file_idx].mtime = now_time;
 }
 
 // ... //
@@ -95,19 +118,35 @@ static int do_getattr( const char *path, struct stat *st )
 {
 	st->st_uid = getuid(); // The owner of the file/directory is the user who mounted the filesystem
 	st->st_gid = getgid(); // The group of the file/directory is the same as the group of the user who mounted the filesystem
-	st->st_atime = time( NULL ); // The last "a"ccess of the file/directory is right now
-	st->st_mtime = time( NULL ); // The last "m"odification of the file/directory is right now
+	// st->st_atime = time( NULL ); // The last "a"ccess of the file/directory is right now
+	// st->st_mtime = time( NULL ); // The last "m"odification of the file/directory is right now
 	
 	if ( strcmp( path, "/" ) == 0 || is_dir( path ) == 1 )
 	{
 		st->st_mode = S_IFDIR | 0755;
 		st->st_nlink = 2; // Why "two" hardlinks instead of "one"? The answer is here: http://unix.stackexchange.com/a/101536
+	
+		//display timestamp
+		int dir_index = get_dir_index(path);
+		struct timespec now_time;
+		timespec_get(&now_time, TIME_UTC);
+		st->st_atime = dir_time_list[dir_index].atime.tv_sec;
+		st->st_mtime = dir_time_list[dir_index].mtime.tv_sec;
+		st->st_ctime = dir_time_list[dir_index].ctime.tv_sec;
 	}
 	else if ( is_file( path ) == 1 )
 	{
 		st->st_mode = S_IFREG | 0644;
 		st->st_nlink = 1;
 		st->st_size = 1024;
+
+		//display timestamp
+		int file_index = get_file_index(path);
+		struct timespec now_time;
+		timespec_get(&now_time, TIME_UTC);
+		st->st_atime = file_time_list[file_index].atime.tv_sec;
+		st->st_mtime = file_time_list[file_index].mtime.tv_sec;
+		st->st_ctime = file_time_list[file_index].ctime.tv_sec;
 	}
 	else
 	{
@@ -144,6 +183,11 @@ static int do_read( const char *path, char *buffer, size_t size, off_t offset, s
 	char *content = files_content[ file_idx ];
 	
 	memcpy( buffer, content + offset, size );
+
+	//set timestamp
+	struct timespec now_time;
+	timespec_get(&now_time, TIME_UTC);
+	file_time_list[file_idx].atime = now_time;
 		
 	return strlen( content ) - offset;
 }
