@@ -31,6 +31,11 @@ $ ./lsysfs -f mount_dir
 ```
 $ cd mount_dir
 ```
-- Now you can use some command like `ls`, `mkdir`...
+- Now you can use some command like `ls`, `mkdir`, `touch`...
  
+## Notice
+- This project only store in memory, so after you close the program, the file that you created will disappear!
+
+
+
 License: GNU GPL.
