@@ -11,13 +11,20 @@ This is an example of using FUSE to build a simple in-memory filesystem that sup
         ```
         $ sudo apt-get update && sudo apt-get install libfuse-dev -y
         ```
-## Compile and run
-1. compile
+## Environment Setup
+1. Download code
+```
+$ git clone https://github.com/wei-juncheng/LSYSFS.git
+```
+```
+$ cd LSYSFS
+```
+2. compile
 ```
 $ make
 ```
 
-2. create a directory and mount
+3. create a directory and mount
 ```
 $ mkdir mount_dir
 ```
@@ -27,7 +34,7 @@ $ ./lsysfs -f mount_dir
 - keep this terminal, don't close it!
 - Now it is running LSYSFS, but you can't interact with him in this terminal. Please open another terminal window.
 
-3. open another terminal and using LSYSFS
+4. open another terminal and using LSYSFS
 ```
 $ cd mount_dir
 ```
